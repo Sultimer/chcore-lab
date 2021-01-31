@@ -102,7 +102,7 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 {
 	char print_buf[PRINT_BUF_LEN];
 	char *s;
-	int t, neg = 0, pc = 0;
+	int neg = 0, pc = 0;
 	unsigned long long u = i;
 
 	if (i == 0) {
@@ -115,10 +115,25 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 		neg = 1;
 		u = -i;
 	}
+
 	// TODO: fill your code here
 	// store the digitals in the buffer `print_buf`:
 	// 1. the last postion of this buffer must be '\0'
 	// 2. the format is only decided by `base` and `letbase` here
+	
+	s = print_buf + PRINT_BUF_LEN;	
+
+	*(--s) = '\0';
+	
+	while(u > 0) {
+		int remainder = u % base;
+		if (remainder < 10) {
+			*(--s) = '0' + remainder;
+		} else {
+			*(--s) = letbase + remainder - 10;
+		}
+		u /= base;
+	}
 
 	if (neg) {
 		if (width && (flags & PAD_ZERO)) {
