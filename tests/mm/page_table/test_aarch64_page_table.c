@@ -137,7 +137,7 @@ MU_TEST(test_map_unmap_page)
 
 	err = map_range_in_pgtbl(root, va, 0x100000, PAGE_SIZE, DEFAULT_FLAGS);
 	mu_assert_int_eq(0, err);
-
+	
 	err = query_in_pgtbl(root, va, &pa, &entry);
 	mu_assert_int_eq(0, err);
 	mu_check(pa == 0x100000);
@@ -148,7 +148,9 @@ MU_TEST(test_map_unmap_page)
 
 	err = query_in_pgtbl(root, va, &pa, &entry);
 	mu_assert_int_eq(-ENOMAPPING, err);
-
+	
+	//exit(0);
+	
 	srand(RND_SEED);
 	vas = malloc(sizeof(*vas) * RND_MAPPING_PAGES);
 	pas = malloc(sizeof(*pas) * RND_MAPPING_PAGES);
@@ -166,7 +168,7 @@ MU_TEST(test_map_unmap_page)
 					 DEFAULT_FLAGS);
 		mu_assert_int_eq(0, err);
 	}
-
+	
 	test_page_mappings(root, pas, vas, RND_MAPPING_PAGES);
 
 	/* Unmap some pages */
@@ -175,7 +177,7 @@ MU_TEST(test_map_unmap_page)
 			continue;
 		printf("unmap: 0x%llx -> 0x%llx\n", vas[i], pas[i]);
 		err = unmap_range_in_pgtbl(root, vas[i], PAGE_SIZE);
-		mu_assert_int_eq(0, err);
+		mu_assert_int_eq(0, err);		
 		vas[i] = 0;
 		pas[i] = 0;
 	}

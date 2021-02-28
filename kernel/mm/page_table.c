@@ -44,11 +44,15 @@ static int set_pte_flags(pte_t * entry, vmr_prop_t flags, int kind)
 {
 	if (flags & VMR_WRITE)
 		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RW_EL0_RW;
+	else if(kind == KERNEL_PTE)
+		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RW_EL0_RW;
 	else
 		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RO_EL0_RO;
 
 	if (flags & VMR_EXEC)
 		entry->l3_page.UXN = AARCH64_PTE_UX;
+	else if(kind == KERNEL_PTE)
+		entry->l3_page.UXN = AARCH64_PTE_UXN;
 	else
 		entry->l3_page.UXN = AARCH64_PTE_UXN;
 
@@ -109,8 +113,9 @@ static int get_next_ptp(ptp_t * cur_ptp, u32 level, vaddr_t va,
 	default:
 		BUG_ON(1);
 	}
-
+	
 	entry = &(cur_ptp->ent[index]);
+	
 	if (IS_PTE_INVALID(entry->pte)) {
 		if (alloc == false) {
 			return -ENOMAPPING;
@@ -136,8 +141,10 @@ static int get_next_ptp(ptp_t * cur_ptp, u32 level, vaddr_t va,
 			entry->pte = new_pte_val.pte;
 		}
 	}
+
 	*next_ptp = (ptp_t *) GET_NEXT_PTP(entry);
 	*pte = entry;
+	
 	if (IS_PTE_TABLE(entry->pte))
 		return NORMAL_PTP;
 	else
@@ -162,7 +169,17 @@ static int get_next_ptp(ptp_t * cur_ptp, u32 level, vaddr_t va,
 int query_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t * pa, pte_t ** entry)
 {
 	// <lab2>
+	ptp_t * next_ptp = (ptp_t *) pgtbl;
+	pte_t * pte;
+	
+	int temp;
+	for (int i=0; i<4; i++) {
+		temp = get_next_ptp(next_ptp, i, va, &next_ptp, &pte, false);
+		if (temp == -ENOMAPPING)
+			return -ENOMAPPING;
+	}
 
+	*pa = (pte->l3_page.pfn << 12) | (GET_VA_OFFSET_L3(va));
 	// </lab2>
 	return 0;
 }
@@ -186,7 +203,28 @@ int map_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t pa,
 		       size_t len, vmr_prop_t flags)
 {
 	// <lab2>
+	
+	for (int i=0; i<len/PAGE_SIZE; i++) {
+		
+		ptp_t * next_ptp = (ptp_t *) pgtbl;
+		pte_t * pte;
+		
+		for (int j=0; j<4; j++) {
+			get_next_ptp(next_ptp, j, va, &next_ptp, &pte, true);
+			pte->table.is_valid = 1;
+			pte->table.is_table = 1;
+		}
+		
+		set_pte_flags(pte, flags, flags & KERNEL_PT ? KERNEL_PTE : USER_PTE);
+		pte->l3_page.pfn = pa >> PAGE_SHIFT;
+		pte->l3_page.is_valid = 1;
+		pte->l3_page.is_page = 1;
+		
+		va += PAGE_SIZE;
+		pa += PAGE_SIZE;
+	}
 
+	flush_tlb();
 	// </lab2>
 	return 0;
 }
@@ -207,7 +245,19 @@ int map_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t pa,
 int unmap_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, size_t len)
 {
 	// <lab2>
+	ptp_t * next_ptp = (ptp_t *) pgtbl;
+	pte_t * pte;
+	
+	int temp;
+	for (int i=0; i<4; i++) {
+		temp = get_next_ptp(next_ptp, i, va, &next_ptp, &pte, false);
 
+		if (temp == -ENOMAPPING)
+			return 0;
+	}
+	pte->l3_page.is_valid = 0;
+
+	flush_tlb();
 	// </lab2>
 	return 0;
 }
