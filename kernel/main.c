@@ -23,7 +23,6 @@
 
 ALIGN(STACK_ALIGNMENT)
 char kernel_stack[PLAT_CPU_NUM][KERNEL_STACK_SIZE];
-
 int stack_backtrace();
 
 // Test the stack backtrace function (lab 1 only)
