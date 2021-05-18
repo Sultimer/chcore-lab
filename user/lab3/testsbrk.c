@@ -14,6 +14,8 @@ int main(int argc, char *argv[], char *envp[])
 	start = usys_handle_brk(0);
 	end = usys_handle_brk(start + ALLOCATE_SIZE);
 
+	printf("*************\n");
+
 	if (end - start < ALLOCATE_SIZE) {
 		printf("sbrk not correctly implemented\n");
 	}

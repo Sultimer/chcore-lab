@@ -120,6 +120,27 @@
 .align	11
 EXPORT(el1_vector)
 
+	exception_entry sync_el1t
+	exception_entry irq_el1t
+	exception_entry fiq_el1t
+	exception_entry error_el1t
+
+	exception_entry sync_el1h
+	exception_entry irq_el1h
+	exception_entry fiq_el1h
+	exception_entry error_el1h
+
+	exception_entry sync_el0_64
+	exception_entry irq_el0_64
+	exception_entry fiq_el0_64
+	exception_entry error_el0_64
+
+	exception_entry sync_el0_32
+	exception_entry irq_el0_32
+	exception_entry fiq_el0_32
+	exception_entry error_el0_32
+
+
 sync_el1t:
 	handle_entry	1, SYNC_EL1t
 
@@ -189,7 +210,7 @@ irq_el1h:
 	handle_entry	0, IRQ_EL1h
 
 irq_el0_64:
-	handle_entry	0,  IRQ_EL0_64
+	handle_entry	0, IRQ_EL0_64
 
 fiq_el0_64:
 	handle_entry	0, FIQ_EL0_64
